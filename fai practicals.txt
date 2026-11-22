@@ -1,0 +1,579 @@
+FA1:
+
+def display(board):
+    for i in range(3):
+        print(board[i * 3], "|", board[i * 3 + 1], "|", board[i * 3 + 2])
+        if i < 2:
+            print("---------")
+
+def winner(board):
+    win = [(0,1,2), (3,4,5), (6,7,8),
+           (0,3,6), (1,4,7), (2,5,8),
+           (0,4,8), (2,4,6)]
+
+    for a, b, c in win:
+        if board[a] == board[b] == board[c] and board[a] != " ":
+            return board[a]
+    return None
+
+def heuristic(board):
+    if winner(board) == "O":
+        return 10
+    if winner(board) == "X":
+        return -10
+    return 0
+
+def astar(board):
+    best_move = -1
+    best_score = -1000
+
+    for i in range(9):
+        if board[i] == " ":
+            board[i] = "O"
+            score = heuristic(board)
+
+            if score == 0:
+                for j in range(9):
+                    if board[j] == " ":
+                        board[j] = "X"
+                        if winner(board) == "X":
+                            score = -10
+                        board[j] = " "
+
+            if score > best_score:
+                best_score = score
+                best_move = i
+
+            board[i] = " "
+
+    return best_move
+
+board = [" "] * 9
+
+while True:
+    display(board)
+
+    move = int(input("Enter position (1-9): ")) - 1
+
+    if move < 0 or move > 8 or board[move] != " ":
+        print("Invalid move!")
+        continue
+
+    board[move] = "X"
+
+    if winner(board) == "X":
+        display(board)
+        print("You win!")
+        break
+
+    if " " not in board:
+        display(board)
+        print("Draw!")
+        break
+
+    move = astar(board)
+
+    if move != -1:
+        board[move] = "O"
+
+    if winner(board) == "O":
+        display(board)
+        print("Computer wins!")
+        break
+
+    if " " not in board:
+        display(board)
+        print("Draw!")
+        break
+
+
+FA2:
+
+def heuristic(state):
+    return state[0] + state[1]
+
+
+def valid(m, c):
+    if m < 0 or c < 0 or m > 3 or c > 3:
+        return False
+    if m > 0 and m < c:
+        return False
+    if (3 - m) > 0 and (3 - m) < (3 - c):
+        return False
+    return True
+
+
+def astar():
+    start = (3, 3, 1)
+    goal = (0, 0, 0)
+
+    open_list = [(heuristic(start), 0, start, [])]
+    visited = []
+
+    moves = [(1, 0), (2, 0), (0, 1),
+             (0, 2), (1, 1)]
+
+    while open_list:
+        open_list.sort()
+        f, g, state, path = open_list.pop(0)
+
+        if state in visited:
+            continue
+
+        visited.append(state)
+        path = path + [state]
+
+        if state == goal:
+            print("Solution Path:")
+            for s in path:
+                print(s)
+            print("\nState Graph:")
+            for i in range(len(path) - 1):
+                print(path[i], "-->", path[i + 1])
+            print("\nTotal steps:", len(path) - 1)
+            return
+
+        m, c, boat = state
+
+        for dm, dc in moves:
+            if boat == 1:
+                new_state = (m - dm, c - dc, 0)
+            else:
+                new_state = (m + dm, c + dc, 1)
+
+            if valid(new_state[0], new_state[1]):
+                if new_state not in visited:
+                    new_g = g + 1
+                    new_f = new_g + heuristic(new_state)
+                    open_list.append(
+                        (new_f, new_g, new_state, path)
+                    )
+
+    print("No solution found")
+
+
+astar()
+
+FA3:
+
+def heuristic(state):
+    goal = [1, 2, 3, 4, 5, 6, 7, 8, 0]
+    count = 0
+
+    for i in range(9):
+        if state[i] != 0 and state[i] != goal[i]:
+            count += 1
+
+    return count
+
+
+def astar():
+    start = [1, 2, 3, 4, 0, 6, 7, 5, 8]
+    goal = [1, 2, 3, 4, 5, 6, 7, 8, 0]
+
+    open_list = [(heuristic(start), 0, start, [])]
+    visited = []
+
+    while open_list:
+        open_list.sort(key=lambda x: x[0])
+        f, g, state, path = open_list.pop(0)
+
+        if state in visited:
+            continue
+
+        visited.append(state)
+        path = path + [state]
+
+        if state == goal:
+            print("Solution Path:")
+            for s in path:
+                print(s[0:3])
+                print(s[3:6])
+                print(s[6:9])
+                print()
+            print("Total steps:", len(path) - 1)
+            return
+
+        blank = state.index(0)
+        row = blank // 3
+        col = blank % 3
+
+        moves = []
+
+        if row > 0:
+            moves.append(blank - 3)
+        if row < 2:
+            moves.append(blank + 3)
+        if col > 0:
+            moves.append(blank - 1)
+        if col < 2:
+            moves.append(blank + 1)
+
+        for pos in moves:
+            new_state = state.copy()
+            new_state[blank] = new_state[pos]
+            new_state[pos] = 0
+
+            if new_state not in visited:
+                new_g = g + 1
+                new_f = new_g + heuristic(new_state)
+                open_list.append(
+                    (new_f, new_g, new_state, path)
+                )
+
+    print("No solution found")
+
+
+astar()
+
+FA4:
+
+# Means-Ends Analysis for a Domestic Robot
+
+# Initial state
+place1 = ["A", "B", "C"]
+place2 = []
+robot = "Place1"
+
+# Goal: Stack A, B, C at Place2
+goal = ["A", "B", "C"]
+
+print("Initial State:")
+print("Place1:", place1)
+print("Place2:", place2)
+print("Robot at:", robot)
+
+print("\nPlanning using Means-Ends Analysis")
+
+# Step 1: Transfer object A
+print("\nStep 1: Pick up A")
+place1.remove("A")
+print("A picked up by robot")
+
+print("Step 2: Move to Place2")
+robot = "Place2"
+
+print("Step 3: Put down A")
+place2.append("A")
+print("Place2:", place2)
+
+# Step 2: Transfer object B
+print("\nStep 4: Move to Place1")
+robot = "Place1"
+
+print("Step 5: Pick up B")
+place1.remove("B")
+print("B picked up by robot")
+
+print("Step 6: Move to Place2")
+robot = "Place2"
+
+print("Step 7: Stack B on A")
+place2.append("B")
+print("Place2:", place2)
+
+# Step 3: Transfer object C
+print("\nStep 8: Move to Place1")
+robot = "Place1"
+
+print("Step 9: Pick up C")
+place1.remove("C")
+print("C picked up by robot")
+
+print("Step 10: Move to Place2")
+robot = "Place2"
+
+print("Step 11: Stack C on B")
+place2.append("C")
+print("Place2:", place2)
+
+# Final state
+print("\nFinal State:")
+print("Place1:", place1)
+print("Place2:", place2)
+print("Robot at:", robot)
+
+if place2 == goal:
+    print("Goal Achieved!")
+else:
+    print("Goal Not Achieved!")
+
+FA5:
+
+# Expert System: Medical Diagnosis of 10 Diseases
+
+print("MEDICAL DIAGNOSIS EXPERT SYSTEM")
+print("Answer each question with yes or no.")
+
+fever = input("Do you have fever? ")
+cough = input("Do you have cough? ")
+cold = input("Do you have a runny nose or cold? ")
+headache = input("Do you have headache? ")
+body_pain = input("Do you have body pain? ")
+sore_throat = input("Do you have sore throat? ")
+itching = input("Do you have skin itching or rash? ")
+stomach_pain = input("Do you have stomach pain? ")
+vomiting = input("Do you have vomiting? ")
+loose_motion = input("Do you have loose motion? ")
+joint_pain = input("Do you have joint pain? ")
+sneezing = input("Do you have frequent sneezing? ")
+
+print("\nPossible Diagnosis:")
+
+if fever == "yes" and body_pain == "yes" and headache == "yes":
+    print("Possible disease: Dengue or another febrile illness")
+
+elif fever == "yes" and cough == "yes" and body_pain == "yes":
+    print("Possible disease: Influenza (Flu)")
+
+elif fever == "yes" and cold == "yes" and cough == "yes":
+    print("Possible disease: Common respiratory infection")
+
+elif cough == "yes" and sore_throat == "yes" and fever == "no":
+    print("Possible disease: Throat infection")
+
+elif cold == "yes" and sneezing == "yes" and fever == "no":
+    print("Possible disease: Common cold or allergic rhinitis")
+
+elif itching == "yes":
+    print("Possible disease: Skin allergy or dermatitis")
+
+elif stomach_pain == "yes" and loose_motion == "yes":
+    print("Possible disease: Gastroenteritis")
+
+elif vomiting == "yes" and loose_motion == "yes":
+    print("Possible disease: Possible stomach infection")
+
+elif fever == "yes" and headache == "yes" and vomiting == "yes":
+    print("Possible disease: Requires medical evaluation for causes such as malaria")
+
+elif joint_pain == "yes" and fever == "yes":
+    print("Possible disease: Viral infection, including chikungunya")
+
+else:
+    print("Disease cannot be identified from these symptoms.")
+    print("Please consult a qualified doctor.")
+
+print("\nNote: This program is for educational purposes only.")
+print("It cannot provide a confirmed medical diagnosis.")
+
+
+FA6:
+
+# Alpha-Beta Pruning Algorithm
+
+def alphabeta(tree, level, index, maximizing, alpha, beta):
+
+    # Leaf node
+    if level == 2:
+        print("Visited leaf:", tree[index])
+        return tree[index]
+
+    if maximizing:
+        best = -999
+
+        for i in range(2):
+            value = alphabeta(tree, level + 1,
+                              index * 2 + i, False,
+                              alpha, beta)
+
+            best = max(best, value)
+            alpha = max(alpha, best)
+
+            if beta <= alpha:
+                print("Pruned a branch at MAX node")
+                break
+
+        return best
+
+    else:
+        best = 999
+
+        for i in range(2):
+            value = alphabeta(tree, level + 1,
+                              index * 2 + i, True,
+                              alpha, beta)
+
+            best = min(best, value)
+            beta = min(beta, best)
+
+            if beta <= alpha:
+                print("Pruned a branch at MIN node")
+                break
+
+        return best
+
+
+# Leaf values from left to right
+tree = [3, 5, 2, 9]
+
+print("Game tree leaf values:", tree)
+
+result = alphabeta(tree, 0, 0, True, -999, 999)
+
+print("Best value:", result)
+
+
+FA7:
+
+# Syntax Analysis of Assertive English Statements
+
+text = input("Enter an assertive sentence: ")
+
+# Stage 1: Sentence Segmentation
+sentences = text.split(".")
+print("\n1. Sentence Segmentation:")
+print(sentences)
+
+for sentence in sentences:
+    if sentence.strip() == "":
+        continue
+
+    # Stage 2: Word Tokenization
+    words = sentence.split()
+    print("\n2. Word Tokenization:")
+    print(words)
+
+    # Stage 3: POS Tagging
+    print("\n3. POS Tagging:")
+    for word in words:
+        w = word.lower().strip(",!?")
+
+        if w in ["the", "a", "an"]:
+            print(word, "- Determiner")
+        elif w in ["is", "am", "are", "was", "were", "reads", "plays", "eats", "likes"]:
+            print(word, "- Verb")
+        elif w in ["he", "she", "they", "we", "i"]:
+            print(word, "- Pronoun")
+        elif w in ["good", "beautiful", "big", "small"]:
+            print(word, "- Adjective")
+        else:
+            print(word, "- Noun")
+
+    # Stage 4: Simple Syntactic Parsing
+    print("\n4. Syntactic Parsing:")
+    print("Sentence")
+    print(" |")
+    print(" +-- Subject:", words[0])
+    if len(words) > 1:
+        print(" +-- Predicate:", " ".join(words[1:]))
+
+print("\nSyntax Analysis Completed")
+
+
+FA8:
+
+# Hill Climbing Algorithm
+
+def hill_climbing():
+    # Initial state
+    current = 0
+
+    # Values of neighboring states
+    values = [1, 3, 5, 7, 6, 4, 2]
+
+    print("Hill Climbing Search")
+
+    while True:
+        print("Current state:", current,
+              "Value:", values[current])
+
+        # Check left neighbor
+        left = current - 1
+        right = current + 1
+
+        best = current
+
+        if left >= 0 and values[left] > values[best]:
+            best = left
+
+        # Check right neighbor
+        if right < len(values) and values[right] > values[best]:
+            best = right
+
+        # Stop if no better neighbor exists
+        if best == current:
+            print("Maximum value found:", values[current])
+            print("Position:", current)
+            break
+
+        current = best
+
+
+hill_climbing()
+
+
+FA9:
+
+# Predicate Logic using PROLOG Concepts
+
+# Facts
+parent = [
+    ("john", "mary"),
+    ("john", "peter"),
+    ("mary", "sam"),
+    ("peter", "lisa")
+]
+
+male = ["john", "peter", "sam"]
+female = ["mary", "lisa"]
+
+# Rules
+def father(x, y):
+    return (x, y) in parent and x in male
+
+def mother(x, y):
+    return (x, y) in parent and x in female
+
+def child(x, y):
+    return (y, x) in parent
+
+def sibling(x, y):
+    for p1 in parent:
+        for p2 in parent:
+            if p1[0] == p2[0] and p1[1] == x and p2[1] == y and x != y:
+                return True
+    return False
+
+# Queries
+print("Facts:")
+print("Parent:", parent)
+print("Male:", male)
+print("Female:", female)
+
+print("\nQueries:")
+print("Is John the father of Mary?", father("john", "mary"))
+print("Is Mary the mother of Sam?", mother("mary", "sam"))
+print("Is Sam the child of Mary?", child("sam", "mary"))
+print("Are Mary and Peter siblings?", sibling("mary", "peter"))
+print("Are Mary and Peter siblings?", sibling("mary", "peter"))
+
+
+FA10:
+
+# Expert System using PROLOG Concepts
+# Example: Animal Identification
+
+print("ANIMAL EXPERT SYSTEM")
+print("Answer with yes or no")
+
+has_hair = input("Does the animal have hair? ")
+gives_milk = input("Does it give milk? ")
+has_feathers = input("Does it have feathers? ")
+can_fly = input("Can it fly? ")
+lives_water = input("Does it live in water? ")
+
+# Expert System Rules
+if has_hair == "yes" and gives_milk == "yes":
+    print("Animal is a Mammal")
+
+elif has_feathers == "yes" and can_fly == "yes":
+    print("Animal is a Bird")
+
+elif lives_water == "yes":
+    print("Animal may be a Fish")
+
+else:
+    print("Animal could not be identified")
+
+print("Expert System Completed")
